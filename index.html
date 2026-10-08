@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic Pysanka Studio — Мова Писанки</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Montserrat:wght@400;600;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .font-comfortaa {
+            font-family: 'Comfortaa', cursive;
+        }
+        .font-serif-title {
+            font-family: 'Playfair Display', serif;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        /* Active button state highlight */
+        .tool-btn.active {
+            border-color: #f59e0b !important;
+            background-color: #334155 !important;
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+        }
+        .color-swatch.active {
+            transform: scale(1.15);
+            outline: 3px solid #ffffff;
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+        }
+        /* Canvas shadow glow */
+        #pysankaCanvasContainer {
+            filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.7));
+        }
+        /* Pulse effect for audio button */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(245, 158, 11, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+        .pulse-audio {
+            animation: pulse-ring 2s infinite;
+        }
+        canvas {
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between bg-slate-950 text-slate-100 overflow-x-hidden">
+
+    <!-- Header -->
+    <header class="bg-slate-900/90 border-b border-slate-800 backdrop-blur sticky top-0 z-50 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-500 to-red-600 flex items-center justify-center text-white shadow-lg shadow-amber-500/20">
+                    <i class="fa-solid fa-egg text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-serif-title text-xl md:text-2xl font-bold text-amber-400 leading-tight">
+                        Magic Pysanka Studio
+                    </h1>
+                    <p class="text-xs text-slate-400">Інтегрований урок: Мова Писанки & English</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button id="btnSoundToggle" onclick="toggleSound()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold flex items-center gap-2 transition">
+                    <i id="soundIcon" class="fa-solid fa-volume-high text-amber-400"></i>
+                    <span class="hidden sm:inline">Звук</span>
+                </button>
+                <button onclick="resetCanvasConfirm()" class="px-3 py-2 bg-rose-950/60 hover:bg-rose-900 border border-rose-800 text-rose-300 rounded-lg text-xs font-semibold flex items-center gap-2 transition">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span>Очистити</span>
+                </button>
+                <button onclick="downloadPysankaCard()" class="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-lg text-xs shadow-lg shadow-amber-500/20 flex items-center gap-2 transition">
+                    <i class="fa-solid fa-download text-sm"></i>
+                    <span>Зберегти листівку</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main App Container -->
+    <main class="max-w-7xl w-full mx-auto p-3 sm:p-4 md:p-6 flex-grow grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- LEFT PANEL: Tools, Patterns & Palette -->
+        <section class="lg:col-span-4 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 md:p-5 flex flex-col gap-5 shadow-xl">
+            
+            <!-- Grid Template Selector -->
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-amber-400 mb-2">
+                    <i class="fa-solid fa-border-all mr-1"></i> 1. Обирай сітку писанки:
+                </label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="setGridPattern('star')" id="grid-star" class="grid-btn border border-amber-500 bg-amber-500/20 text-xs py-2 px-3 rounded-lg text-slate-200 transition font-medium flex items-center gap-2">
+                        <i class="fa-solid fa-bahai text-amber-400"></i> Зіркова (Star)
+                    </button>
+                    <button onclick="setGridPattern('cross')" id="grid-cross" class="grid-btn border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-xs py-2 px-3 rounded-lg text-slate-200 transition font-medium flex items-center gap-2">
+                        <i class="fa-solid fa-disease text-amber-400"></i> Поділ 4 (Cross)
+                    </button>
+                    <button onclick="setGridPattern('waves')" id="grid-waves" class="grid-btn border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-xs py-2 px-3 rounded-lg text-slate-200 transition font-medium flex items-center gap-2">
+                        <i class="fa-solid fa-water text-amber-400"></i> Хвиляста (Waves)
+                    </button>
+                    <button onclick="setGridPattern('blank')" id="grid-blank" class="grid-btn border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-xs py-2 px-3 rounded-lg text-slate-200 transition font-medium flex items-center gap-2">
+                        <i class="fa-regular fa-circle text-amber-400"></i> Чиста (Blank)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mode Selector -->
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-amber-400 mb-2">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> 2. Інструмент розпису:
+                </label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="setMode('fill')" id="tool-fill" class="tool-btn active border border-slate-700 bg-slate-800 text-xs py-2.5 px-2 rounded-xl text-center flex flex-col items-center gap-1 transition">
+                        <i class="fa-solid fa-fill-drip text-lg text-amber-400"></i>
+                        <span class="font-semibold text-[11px]">Заливка</span>
+                    </button>
+                    <button onclick="setMode('stamp')" id="tool-stamp" class="tool-btn border border-slate-700 bg-slate-800 text-xs py-2.5 px-2 rounded-xl text-center flex flex-col items-center gap-1 transition">
+                        <i class="fa-solid fa-icons text-lg text-emerald-400"></i>
+                        <span class="font-semibold text-[11px]">Штамп</span>
+                    </button>
+                    <button onclick="setMode('draw')" id="tool-draw" class="tool-btn border border-slate-700 bg-slate-800 text-xs py-2.5 px-2 rounded-xl text-center flex flex-col items-center gap-1 transition">
+                        <i class="fa-solid fa-pen-nib text-lg text-sky-400"></i>
+                        <span class="font-semibold text-[11px]">Писачок</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stamp Selection Subpanel (Shown when Stamp mode active) -->
+            <div id="stampSubpanel" class="hidden p-3 bg-slate-950/60 border border-slate-800 rounded-xl">
+                <label class="block text-[11px] font-semibold text-slate-400 mb-2">
+                    Обери традиційний символ (Symbol):
+                </label>
+                <div class="grid grid-cols-6 gap-2">
+                    <button onclick="setStamp('sun')" id="stamp-sun" class="stamp-btn p-2 border border-amber-500/40 bg-amber-500/10 rounded-lg text-amber-300 hover:bg-amber-500/20 text-center transition" title="Sun / Зірка">
+                        <i class="fa-solid fa-sun text-base"></i>
+                    </button>
+                    <button onclick="setStamp('wave')" id="stamp-wave" class="stamp-btn p-2 border border-slate-700 bg-slate-800 rounded-lg text-cyan-300 hover:bg-slate-700 text-center transition" title="Wave / Безкінечник">
+                        <i class="fa-solid fa-water text-base"></i>
+                    </button>
+                    <button onclick="setStamp('triangle')" id="stamp-triangle" class="stamp-btn p-2 border border-slate-700 bg-slate-800 rounded-lg text-rose-300 hover:bg-slate-700 text-center transition" title="Triangle / Трикутник">
+                        <i class="fa-solid fa-play -rotate-90 text-base"></i>
+                    </button>
+                    <button onclick="setStamp('tree')" id="stamp-tree" class="stamp-btn p-2 border border-slate-700 bg-slate-800 rounded-lg text-emerald-300 hover:bg-slate-700 text-center transition" title="Tree of Life / Дерево Життя">
+                        <i class="fa-solid fa-tree text-base"></i>
+                    </button>
+                    <button onclick="setStamp('bird')" id="stamp-bird" class="stamp-btn p-2 border border-slate-700 bg-slate-800 rounded-lg text-sky-300 hover:bg-slate-700 text-center transition" title="Bird / Пташка">
+                        <i class="fa-solid fa-dove text-base"></i>
+                    </button>
+                    <button onclick="setStamp('cross')" id="stamp-cross" class="stamp-btn p-2 border border-slate-700 bg-slate-800 rounded-lg text-purple-300 hover:bg-slate-700 text-center transition" title="Cross / Хрест">
+                        <i class="fa-solid fa-plus text-base"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Color Palette with English & Symbolic Meanings -->
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-xs font-bold uppercase tracking-wider text-amber-400">
+                        <i class="fa-solid fa-palette mr-1"></i> 3. Палітра & Значення:
+                    </label>
+                    <span id="currentColorLabel" class="text-[11px] font-bold text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-800/50">
+                        Red / Червоний
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-4 sm:grid-cols-8 lg:grid-cols-4 gap-2 mb-3">
+                    <button onclick="setColor('#dc2626', 'Red', 'Protection & Love', 'Захист, любов, радість', this)" class="color-swatch active w-full h-9 rounded-xl border-2 border-white/20 transition transform" style="background-color: #dc2626;"></button>
+                    <button onclick="setColor('#eab308', 'Yellow', 'Sun & Harvest', 'Сонце, тепло, врожай', this)" class="color-swatch w-full h-9 rounded-xl border-2 border-white/20 transition transform" style="background-color: #eab308;"></button>
+                    <button onclick="setColor('#16a34a', 'Green', 'Health & Spring', 'Здоров\'я, весна, природа', this)" class="color-swatch w-full h-9 rounded-xl border-2 border-white/20 transition transform" style="background-color: #16a34a;"></button>
+                    <button onclick="setColor('#0284c7', 'Blue', 'Sky & Good Health', 'Небо, вода, здоров\'я', this)" class="color-swatch w-full h-9 rounded-xl border-2 border-white/20 transition transform" style="background-color: #0284c7;"></button>
+                    <button onclick="setColor('#ea580c', 'Orange', 'Warmth & Strength', 'Тепло, сила, краса', this)" class="color-swatch w-full h-9 rounded-xl border-2 border-white/20 transition transform" style="background-color: #ea580c;"></button>
+                    <button onclick="setColor('#9333ea', 'Purple', 'Faith & Wisdom', 'Віра, мудрість', this)" class="color-swatch w-full h-9 rounded-xl border-2 border-white/20 transition transform" style="background-color: #9333ea;"></button>
+                    <button onclick="setColor('#18181b', 'Black', 'Eternity & Respect', 'Вічність, пошана предків', this)" class="color-swatch w-full h-9 rounded-xl border-2 border-white/20 transition transform" style="background-color: #18181b;"></button>
+                    <button onclick="setColor('#f8fafc', 'White', 'Purity & Light', 'Чистота, світло, виток', this)" class="color-swatch w-full h-9 rounded-xl border-2 border-slate-400 transition transform" style="background-color: #f8fafc;"></button>
+                </div>
+
+                <!-- Color Info Card -->
+                <div id="colorMeaningBox" class="bg-slate-950/70 border border-slate-800 p-3 rounded-xl flex items-center gap-3">
+                    <div id="colorBadge" class="w-8 h-8 rounded-full border border-white/30 flex-shrink-0 bg-red-600"></div>
+                    <div class="text-xs">
+                        <p class="font-bold text-slate-200" id="colorEngMeaning">
+                            Red = Protection & Love
+                        </p>
+                        <p class="text-slate-400 text-[11px]" id="colorUkrMeaning">
+                            Червоний колір означає захист, любов та сонячну радість.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stylus Size Toggle -->
+            <div id="stylusSubpanel" class="hidden flex-col gap-2 pt-2 border-t border-slate-800">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-slate-300 font-medium">Товщина писачка (Brush size):</span>
+                    <span id="brushSizeVal" class="text-amber-400 font-bold">5px</span>
+                </div>
+                <input id="brushSize" type="range" min="2" max="25" value="5" oninput="updateBrushSize(this.value)" class="w-full accent-amber-500 bg-slate-800 h-2 rounded-lg cursor-pointer">
+            </div>
+
+        </section>
+
+        <!-- CENTER PANEL: Interactive Pysanka Canvas -->
+        <section class="lg:col-span-5 flex flex-col items-center justify-center relative min-h-[460px]">
+            
+            <div id="pysankaCanvasContainer" class="relative cursor-pointer transition-transform duration-300">
+                <canvas id="pysankaCanvas" width="380" height="520" class="rounded-3xl border border-slate-800/80 bg-slate-900/30 backdrop-blur"></canvas>
+            </div>
+
+            <div class="mt-4 flex items-center justify-center gap-3 text-xs text-slate-400 bg-slate-900/70 border border-slate-800/80 px-4 py-2 rounded-full shadow-inner">
+                <i class="fa-solid fa-hand-pointer text-amber-400 animate-bounce"></i>
+                <span id="toolInstruction">Клікай на ділянки писанки, щоб розфарбувати їх!</span>
+            </div>
+        </section>
+
+        <!-- RIGHT PANEL: English Wish Generator & Symbol Dictionary -->
+        <section class="lg:col-span-3 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 md:p-5 flex flex-col justify-between gap-4 shadow-xl">
+            <div>
+                <div class="flex items-center gap-2 mb-3">
+                    <i class="fa-solid fa-comment-dots text-amber-400 text-lg"></i>
+                    <h2 class="font-serif-title font-bold text-slate-100 text-lg">English Wish</h2>
+                </div>
+                <p class="text-xs text-slate-400 mb-4">
+                    Гра автоматично складає твоє побажання англійською на основі обраного дизайну:
+                </p>
+
+                <!-- English Card Preview -->
+                <div class="bg-gradient-to-br from-slate-950 to-slate-900 border border-amber-500/30 rounded-2xl p-4 shadow-lg flex flex-col gap-3 relative overflow-hidden">
+                    <div class="absolute -right-4 -bottom-4 text-amber-500/5 text-8xl pointer-events-none">
+                        <i class="fa-solid fa-egg"></i>
+                    </div>
+
+                    <div class="text-xs text-amber-400 font-bold tracking-widest uppercase flex items-center justify-between">
+                        <span>Pysanka Message</span>
+                        <i class="fa-solid fa-sparkles"></i>
+                    </div>
+
+                    <div id="englishWishText" class="text-sm font-medium text-slate-200 leading-relaxed italic">
+                        "Our Pysanka is painted in <span class="text-red-400 font-bold">Red</span>. It symbolizes <span class="text-amber-300 font-bold">Protection & Love</span>. We wish peace, health, and joy to everyone!"
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                        <button onclick="speakWish()" class="pulse-audio px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg flex items-center gap-2 transition shadow">
+                            <i class="fa-solid fa-volume-high"></i>
+                            <span>Прослухати (Listen)</span>
+                        </button>
+                        <span class="text-[10px] text-slate-500">English Speech</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Symbol Vocabulary Quick Guide -->
+            <div class="bg-slate-950/50 border border-slate-800/80 rounded-xl p-3">
+                <h3 class="text-xs font-bold text-amber-400 mb-2 uppercase flex items-center gap-1.5">
+                    <i class="fa-solid fa-book-bookmark"></i> Словничок (Vocabulary)
+                </h3>
+                <ul class="text-[11px] text-slate-300 space-y-1.5">
+                    <li class="flex justify-between border-b border-slate-800/50 pb-1">
+                        <span class="font-semibold text-amber-200">The Sun (☀️)</span>
+                        <span class="text-slate-400">Light & Life</span>
+                    </li>
+                    <li class="flex justify-between border-b border-slate-800/50 pb-1">
+                        <span class="font-semibold text-cyan-200">Endless Wave (🌊)</span>
+                        <span class="text-slate-400">Eternity</span>
+                    </li>
+                    <li class="flex justify-between border-b border-slate-800/50 pb-1">
+                        <span class="font-semibold text-rose-200">Triangle (🔺)</span>
+                        <span class="text-slate-400">Holy Trinity</span>
+                    </li>
+                    <li class="flex justify-between border-b border-slate-800/50 pb-1">
+                        <span class="font-semibold text-emerald-200">Tree of Life (🌿)</span>
+                        <span class="text-slate-400">Family & Health</span>
+                    </li>
+                    <li class="flex justify-between">
+                        <span class="font-semibold text-sky-200">Bird (🐦)</span>
+                        <span class="text-slate-400">Spring & Joy</span>
+                    </li>
+                </ul>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Modal for Card Export -->
+    <div id="exportModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-lg w-full p-6 flex flex-col items-center text-center shadow-2xl relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-2xl mb-3">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <h3 class="font-serif-title text-xl font-bold text-amber-300 mb-1">Вітаємо! Писанку розписано!</h3>
+            <p class="text-xs text-slate-300 mb-4">Ваша святкова листівка готова для завантаження та презентації на уроці.</p>
+            
+            <div id="cardPreviewContainer" class="mb-4 border border-slate-700 rounded-xl overflow-hidden bg-slate-950 shadow-inner max-w-xs"></div>
+
+            <div class="flex gap-3 w-full justify-center">
+                <a id="downloadCardBtn" href="#" download="my_magic_pysanka.png" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg transition">
+                    <i class="fa-solid fa-file-arrow-down text-sm"></i>
+                    Завантажити фото
+                </a>
+                <button onclick="closeModal()" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-xs transition">
+                    Закрити
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-amber-500 text-slate-950 font-bold text-xs px-4 py-3 rounded-xl shadow-xl z-50 transition transform translate-y-20 opacity-0 pointer-events-none flex items-center gap-2">
+        <i class="fa-solid fa-circle-info text-base"></i>
+        <span id="toastMsg">Повідомлення</span>
+    </div>
+
+    <script>
+        /* State Variables */
+        let canvas, ctx;
+        let activeColor = '#dc2626';
+        let activeColorNameEng = 'Red';
+        let activeColorMeaningEng = 'Protection & Love';
+        let activeColorMeaningUkr = 'Захист, любов, радість';
+        
+        let activeMode = 'fill'; // 'fill', 'stamp', 'draw'
+        let activeStamp = 'sun'; // 'sun', 'wave', 'triangle', 'tree', 'bird', 'cross'
+        let currentGrid = 'star'; // 'star', 'cross', 'waves', 'blank'
+        let brushSize = 5;
+        let isDrawing = false;
+        let soundEnabled = true;
+
+        // Tracks used colors and stamps for English wish generator
+        let usedColors = new Set(['Red']);
+        let usedStamps = new Set(['Sun']);
+
+        // Egg Canvas Geometry
+        const eggWidth = 260;
+        const eggHeight = 360;
+        let eggCenterX, eggCenterY;
+
+        // Grid region fill store
+        let regionFills = {};
+
+        // Web Audio API Synth for sound effects
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) audioCtx = new AudioContext();
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                initAudio();
+                if (!audioCtx) return;
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'fill') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.12);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.12);
+                    osc.start(now);
+                    osc.stop(now + 0.12);
+                } else if (type === 'stamp') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(600, now + 0.18);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.18);
+                    osc.start(now);
+                    osc.stop(now + 0.18);
+                } else if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(520, now);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                }
+            } catch (e) {
+                console.log('Audio error', e);
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('soundIcon');
+            if (soundEnabled) {
+                icon.className = 'fa-solid fa-volume-high text-amber-400';
+                showToast('Звук увімкнено');
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark text-slate-500';
+                showToast('Звук вимкнено');
+            }
+        }
+
+        /* Calculate accurate canvas coordinates for mouse & touch events */
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            let clientX, clientY;
+            
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        /* Event Handlers */
+        function handlePointerDown(e) {
+            if (e.button && e.button !== 0) return;
+            isDrawing = true;
+            const pos = getCanvasCoords(e);
+
+            if (activeMode === 'fill') {
+                fillRegionAt(pos.x, pos.y);
+            } else if (activeMode === 'stamp') {
+                placeStampAt(pos.x, pos.y);
+            } else if (activeMode === 'draw') {
+                startFreehandDraw(pos.x, pos.y);
+            }
+        }
+
+        function handlePointerMove(e) {
+            if (!isDrawing) return;
+            if (activeMode === 'draw') {
+                const pos = getCanvasCoords(e);
+                continueFreehandDraw(pos.x, pos.y);
+            }
+        }
+
+        function handlePointerUp() {
+            isDrawing = false;
+        }
+
+        function handleTouchStart(e) {
+            e.preventDefault();
+            handlePointerDown(e);
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            handlePointerMove(e);
+        }
+
+        /* Initialize Canvas & Application */
+        window.onload = function() {
+            canvas = document.getElementById('pysankaCanvas');
+            ctx = canvas.getContext('2d');
+            
+            eggCenterX = canvas.width / 2;
+            eggCenterY = canvas.height / 2 + 10;
+
+            setupGridRegions(currentGrid);
+            renderCanvas();
+
+            // Register Mouse Events
+            canvas.addEventListener('mousedown', handlePointerDown);
+            canvas.addEventListener('mousemove', handlePointerMove);
+            canvas.addEventListener('mouseup', handlePointerUp);
+            canvas.addEventListener('mouseleave', handlePointerUp);
+
+            // Register Touch Events
+            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+            canvas.addEventListener('touchend', handlePointerUp);
+
+            updateWishText();
+        };
+
+        /* Realistic Organic Egg Geometry */
+        function drawEggBoundaryPath(targetCtx) {
+            const cX = eggCenterX; // 190
+            const cY = eggCenterY; // 270
+            const rx = eggWidth / 2; // 130
+            const ry = eggHeight / 2; // 180
+
+            targetCtx.beginPath();
+            // Start top apex of egg
+            targetCtx.moveTo(cX, cY - ry);
+            // Smooth right curve (narrow top, fuller lower curve)
+            targetCtx.bezierCurveTo(cX + rx * 0.75, cY - ry * 0.9, cX + rx, cY - ry * 0.1, cX + rx, cY + ry * 0.2);
+            targetCtx.bezierCurveTo(cX + rx, cY + ry * 0.7, cX + rx * 0.6, cY + ry, cX, cY + ry);
+            // Smooth left curve
+            targetCtx.bezierCurveTo(cX - rx * 0.6, cY + ry, cX - rx, cY + ry * 0.7, cX - rx, cY + ry * 0.2);
+            targetCtx.bezierCurveTo(cX - rx, cY - ry * 0.1, cX - rx * 0.75, cY - ry * 0.9, cX, cY - ry);
+            targetCtx.closePath();
+        }
+
+        /* Wave line equation */
+        function getWaveY(x, waveIndex) {
+            const baseScale = waveIndex === 1 ? eggCenterY - 50 : eggCenterY + 50;
+            return baseScale + Math.sin((x - eggCenterX) * 0.035) * 20;
+        }
+
+        /* Generate Grid Regions for Click-to-Fill */
+        function setupGridRegions(gridType) {
+            regionFills = {};
+
+            if (gridType === 'blank') {
+                regionFills['r_main'] = '#f8fafc';
+            } else if (gridType === 'cross') {
+                regionFills['r_top_left'] = '#dc2626';
+                regionFills['r_top_right'] = '#eab308';
+                regionFills['r_bottom_left'] = '#16a34a';
+                regionFills['r_bottom_right'] = '#0284c7';
+            } else if (gridType === 'waves') {
+                regionFills['r_wave_top'] = '#dc2626';
+                regionFills['r_wave_mid'] = '#16a34a';
+                regionFills['r_wave_bottom'] = '#0284c7';
+            } else if (gridType === 'star') {
+                const palette = ['#dc2626', '#eab308', '#dc2626', '#16a34a', '#0284c7', '#eab308', '#16a34a', '#ea580c'];
+                for (let i = 0; i < 8; i++) {
+                    regionFills[`r_star_${i}`] = palette[i];
+                }
+            }
+        }
+
+        function renderCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Background glow
+            ctx.save();
+            ctx.shadowColor = 'rgba(245, 158, 11, 0.25)';
+            ctx.shadowBlur = 35;
+            drawEggBoundaryPath(ctx);
+            ctx.fillStyle = '#0f172a';
+            ctx.fill();
+            ctx.restore();
+
+            // Clip inside egg
+            ctx.save();
+            drawEggBoundaryPath(ctx);
+            ctx.clip();
+
+            // Fill Grid Regions
+            if (currentGrid === 'blank') {
+                ctx.fillStyle = regionFills['r_main'] || '#f8fafc';
+                ctx.fill();
+            } else if (currentGrid === 'cross') {
+                const cX = eggCenterX;
+                const cY = eggCenterY;
+
+                ctx.fillStyle = regionFills['r_top_left'] || '#dc2626';
+                ctx.fillRect(0, 0, cX, cY);
+
+                ctx.fillStyle = regionFills['r_top_right'] || '#eab308';
+                ctx.fillRect(cX, 0, canvas.width - cX, cY);
+
+                ctx.fillStyle = regionFills['r_bottom_left'] || '#16a34a';
+                ctx.fillRect(0, cY, cX, canvas.height - cY);
+
+                ctx.fillStyle = regionFills['r_bottom_right'] || '#0284c7';
+                ctx.fillRect(cX, cY, canvas.width - cX, canvas.height - cY);
+            } else if (currentGrid === 'waves') {
+                // Band 1
+                ctx.fillStyle = regionFills['r_wave_top'] || '#dc2626';
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(canvas.width, 0);
+                for (let x = canvas.width; x >= 0; x -= 5) {
+                    ctx.lineTo(x, getWaveY(x, 1));
+                }
+                ctx.closePath();
+                ctx.fill();
+
+                // Band 2
+                ctx.fillStyle = regionFills['r_wave_mid'] || '#16a34a';
+                ctx.beginPath();
+                for (let x = 0; x <= canvas.width; x += 5) {
+                    ctx.lineTo(x, getWaveY(x, 1));
+                }
+                for (let x = canvas.width; x >= 0; x -= 5) {
+                    ctx.lineTo(x, getWaveY(x, 2));
+                }
+                ctx.closePath();
+                ctx.fill();
+
+                // Band 3
+                ctx.fillStyle = regionFills['r_wave_bottom'] || '#0284c7';
+                ctx.beginPath();
+                for (let x = 0; x <= canvas.width; x += 5) {
+                    ctx.lineTo(x, getWaveY(x, 2));
+                }
+                ctx.lineTo(canvas.width, canvas.height);
+                ctx.lineTo(0, canvas.height);
+                ctx.closePath();
+                ctx.fill();
+            } else if (currentGrid === 'star') {
+                const cX = eggCenterX;
+                const cY = eggCenterY;
+                const radius = 350;
+
+                for (let i = 0; i < 8; i++) {
+                    const startAngle = (i * Math.PI) / 4 - Math.PI / 8;
+                    const endAngle = startAngle + Math.PI / 4;
+
+                    ctx.fillStyle = regionFills[`r_star_${i}`] || '#dc2626';
+                    ctx.beginPath();
+                    ctx.moveTo(cX, cY);
+                    ctx.arc(cX, cY, radius, startAngle, endAngle);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+
+            // Draw Stored User Drawing Layer
+            if (window.userDrawLayer) {
+                ctx.drawImage(window.userDrawLayer, 0, 0);
+            }
+
+            // Render Division Lines
+            renderDivisionLines();
+
+            ctx.restore();
+
+            // Outer Wax Contour
+            ctx.save();
+            drawEggBoundaryPath(ctx);
+            ctx.lineWidth = 6;
+            ctx.strokeStyle = '#f59e0b';
+            ctx.stroke();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#ffffff';
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        /* Render Classic Pysanka Division Lines */
+        function renderDivisionLines() {
+            ctx.save();
+            ctx.strokeStyle = '#18181b';
+            ctx.lineWidth = 4;
+
+            const cX = eggCenterX;
+            const cY = eggCenterY;
+
+            if (currentGrid === 'cross') {
+                ctx.beginPath();
+                ctx.moveTo(cX, 0); ctx.lineTo(cX, canvas.height);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(0, cY); ctx.lineTo(canvas.width, cY);
+                ctx.stroke();
+            } else if (currentGrid === 'star') {
+                for (let i = 0; i < 4; i++) {
+                    const angle = (i * Math.PI) / 4 - Math.PI / 8;
+                    ctx.beginPath();
+                    ctx.moveTo(cX - Math.cos(angle) * 300, cY - Math.sin(angle) * 300);
+                    ctx.lineTo(cX + Math.cos(angle) * 300, cY + Math.sin(angle) * 300);
+                    ctx.stroke();
+                }
+
+                drawSymbolStamp(ctx, cX, cY, 'sun', '#f59e0b', 1.8);
+            } else if (currentGrid === 'waves') {
+                ctx.beginPath();
+                for (let x = 0; x <= canvas.width; x += 5) {
+                    const y = getWaveY(x, 1);
+                    if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+
+                ctx.beginPath();
+                for (let x = 0; x <= canvas.width; x += 5) {
+                    const y = getWaveY(x, 2);
+                    if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        /* Fill Region Logic */
+        function fillRegionAt(x, y) {
+            playSound('fill');
+
+            if (currentGrid === 'blank') {
+                regionFills['r_main'] = activeColor;
+            } else if (currentGrid === 'cross') {
+                if (x < eggCenterX && y < eggCenterY) regionFills['r_top_left'] = activeColor;
+                else if (x >= eggCenterX && y < eggCenterY) regionFills['r_top_right'] = activeColor;
+                else if (x < eggCenterX && y >= eggCenterY) regionFills['r_bottom_left'] = activeColor;
+                else regionFills['r_bottom_right'] = activeColor;
+            } else if (currentGrid === 'waves') {
+                const w1Y = getWaveY(x, 1);
+                const w2Y = getWaveY(x, 2);
+
+                if (y < w1Y) regionFills['r_wave_top'] = activeColor;
+                else if (y < w2Y) regionFills['r_wave_mid'] = activeColor;
+                else regionFills['r_wave_bottom'] = activeColor;
+            } else if (currentGrid === 'star') {
+                let angle = Math.atan2(y - eggCenterY, x - eggCenterX);
+                let adjustedAngle = angle + Math.PI / 8;
+                if (adjustedAngle < 0) adjustedAngle += Math.PI * 2;
+
+                const sectorIndex = Math.floor((adjustedAngle / (Math.PI * 2)) * 8) % 8;
+                regionFills[`r_star_${sectorIndex}`] = activeColor;
+            }
+
+            usedColors.add(activeColorNameEng);
+            updateWishText();
+            renderCanvas();
+        }
+
+        /* Place Stamp Symbol */
+        function placeStampAt(x, y) {
+            playSound('stamp');
+
+            if (!window.userDrawLayer) {
+                window.userDrawLayer = document.createElement('canvas');
+                window.userDrawLayer.width = canvas.width;
+                window.userDrawLayer.height = canvas.height;
+            }
+            const drawCtx = window.userDrawLayer.getContext('2d');
+
+            drawSymbolStamp(drawCtx, x, y, activeStamp, activeColor, 1.2);
+
+            let stampEngName = 'Sun';
+            if (activeStamp === 'wave') stampEngName = 'Endless Wave';
+            if (activeStamp === 'triangle') stampEngName = 'Triangle';
+            if (activeStamp === 'tree') stampEngName = 'Tree of Life';
+            if (activeStamp === 'bird') stampEngName = 'Bird';
+            if (activeStamp === 'cross') stampEngName = 'Cross';
+
+            usedStamps.add(stampEngName);
+            updateWishText();
+            renderCanvas();
+        }
+
+        /* Draw Vector Stamp Icons */
+        function drawSymbolStamp(targetCtx, x, y, type, color, scale = 1) {
+            targetCtx.save();
+            targetCtx.translate(x, y);
+            targetCtx.scale(scale, scale);
+            targetCtx.strokeStyle = color;
+            targetCtx.fillStyle = color;
+            targetCtx.lineWidth = 3;
+            targetCtx.lineCap = 'round';
+
+            if (type === 'sun') {
+                for (let i = 0; i < 8; i++) {
+                    targetCtx.rotate(Math.PI / 4);
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(0, 0);
+                    targetCtx.lineTo(0, -18);
+                    targetCtx.stroke();
+                }
+                targetCtx.beginPath();
+                targetCtx.arc(0, 0, 6, 0, Math.PI * 2);
+                targetCtx.fill();
+            } else if (type === 'wave') {
+                targetCtx.beginPath();
+                targetCtx.arc(-10, 0, 10, Math.PI, 0, false);
+                targetCtx.arc(10, 0, 10, Math.PI, 0, true);
+                targetCtx.stroke();
+            } else if (type === 'triangle') {
+                targetCtx.beginPath();
+                targetCtx.moveTo(0, -16);
+                targetCtx.lineTo(14, 12);
+                targetCtx.lineTo(-14, 12);
+                targetCtx.closePath();
+                targetCtx.stroke();
+            } else if (type === 'tree') {
+                targetCtx.beginPath();
+                targetCtx.moveTo(0, 16);
+                targetCtx.lineTo(0, -16);
+                targetCtx.moveTo(0, 4);
+                targetCtx.lineTo(10, -4);
+                targetCtx.moveTo(0, -2);
+                targetCtx.lineTo(10, -10);
+                targetCtx.moveTo(0, 4);
+                targetCtx.lineTo(-10, -4);
+                targetCtx.moveTo(0, -2);
+                targetCtx.lineTo(-10, -10);
+                targetCtx.stroke();
+            } else if (type === 'bird') {
+                targetCtx.beginPath();
+                targetCtx.arc(0, 0, 8, Math.PI, 0);
+                targetCtx.lineTo(12, -8);
+                targetCtx.moveTo(-8, 0);
+                targetCtx.lineTo(-14, 6);
+                targetCtx.stroke();
+            } else if (type === 'cross') {
+                targetCtx.beginPath();
+                targetCtx.moveTo(0, -14); targetCtx.lineTo(0, 14);
+                targetCtx.moveTo(-14, 0); targetCtx.lineTo(14, 0);
+                targetCtx.stroke();
+                targetCtx.beginPath();
+                targetCtx.arc(0, 0, 10, 0, Math.PI * 2);
+                targetCtx.stroke();
+            }
+
+            targetCtx.restore();
+        }
+
+        /* Freehand Wax Stylus Logic */
+        let lastX = 0, lastY = 0;
+
+        function startFreehandDraw(x, y) {
+            lastX = x;
+            lastY = y;
+            if (!window.userDrawLayer) {
+                window.userDrawLayer = document.createElement('canvas');
+                window.userDrawLayer.width = canvas.width;
+                window.userDrawLayer.height = canvas.height;
+            }
+        }
+
+        function continueFreehandDraw(x, y) {
+            const drawCtx = window.userDrawLayer.getContext('2d');
+            drawCtx.save();
+            drawCtx.strokeStyle = activeColor;
+            drawCtx.lineWidth = brushSize;
+            drawCtx.lineCap = 'round';
+            drawCtx.lineJoin = 'round';
+
+            drawCtx.beginPath();
+            drawCtx.moveTo(lastX, lastY);
+            drawCtx.lineTo(x, y);
+            drawCtx.stroke();
+            drawCtx.restore();
+
+            lastX = x;
+            lastY = y;
+
+            renderCanvas();
+        }
+
+        function setMode(mode) {
+            playSound('click');
+            activeMode = mode;
+            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tool-${mode}`).classList.add('active');
+
+            const stampSub = document.getElementById('stampSubpanel');
+            const stylusSub = document.getElementById('stylusSubpanel');
+            const instruction = document.getElementById('toolInstruction');
+
+            if (mode === 'stamp') {
+                stampSub.classList.remove('hidden');
+                stylusSub.classList.add('hidden');
+                instruction.innerText = 'Клікай на писанку, щоб поставити обраний символ-штамп!';
+            } else if (mode === 'draw') {
+                stampSub.classList.add('hidden');
+                stylusSub.classList.remove('hidden');
+                instruction.innerText = 'Затисни кнопку та малюй писачком як справжній майстер!';
+            } else {
+                stampSub.classList.add('hidden');
+                stylusSub.classList.add('hidden');
+                instruction.innerText = 'Клікай на ділянки писанки, щоб розфарбувати їх!';
+            }
+        }
+
+        function setStamp(stamp) {
+            playSound('click');
+            activeStamp = stamp;
+            document.querySelectorAll('.stamp-btn').forEach(btn => {
+                btn.classList.remove('border-amber-500/40', 'bg-amber-500/10');
+                btn.classList.add('border-slate-700', 'bg-slate-800');
+            });
+            const selected = document.getElementById(`stamp-${stamp}`);
+            if (selected) {
+                selected.classList.remove('border-slate-700', 'bg-slate-800');
+                selected.classList.add('border-amber-500/40', 'bg-amber-500/10');
+            }
+        }
+
+        function setColor(colorHex, nameEng, meaningEng, meaningUkr, elem) {
+            playSound('click');
+            activeColor = colorHex;
+            activeColorNameEng = nameEng;
+            activeColorMeaningEng = meaningEng;
+            activeColorMeaningUkr = meaningUkr;
+
+            document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+            if (elem) elem.classList.add('active');
+
+            document.getElementById('currentColorLabel').innerText = `${nameEng} / ${getUkrColorName(nameEng)}`;
+            document.getElementById('colorBadge').style.backgroundColor = colorHex;
+            document.getElementById('colorEngMeaning').innerText = `${nameEng} = ${meaningEng}`;
+            document.getElementById('colorUkrMeaning').innerText = meaningUkr;
+
+            usedColors.add(nameEng);
+            updateWishText();
+        }
+
+        function getUkrColorName(eng) {
+            const map = {
+                'Red': 'Червоний', 'Yellow': 'Жовтий', 'Green': 'Зелений',
+                'Blue': 'Синій', 'Orange': 'Помаранчевий', 'Purple': 'Фіолетовий',
+                'Black': 'Чорний', 'White': 'Білий'
+            };
+            return map[eng] || eng;
+        }
+
+        function setGridPattern(pattern) {
+            playSound('click');
+            currentGrid = pattern;
+
+            document.querySelectorAll('.grid-btn').forEach(btn => {
+                btn.classList.remove('border-amber-500', 'bg-amber-500/20');
+                btn.classList.add('border-slate-700', 'bg-slate-800/80');
+            });
+            const selected = document.getElementById(`grid-${pattern}`);
+            if (selected) {
+                selected.classList.remove('border-slate-700', 'bg-slate-800/80');
+                selected.classList.add('border-amber-500', 'bg-amber-500/20');
+            }
+
+            setupGridRegions(pattern);
+            renderCanvas();
+            showToast(`Обрано сітку: ${pattern.toUpperCase()}`);
+        }
+
+        function updateBrushSize(val) {
+            brushSize = val;
+            document.getElementById('brushSizeVal').innerText = `${val}px`;
+        }
+
+        function updateWishText() {
+            const colorsArr = Array.from(usedColors);
+            const stampsArr = Array.from(usedStamps);
+
+            let colorsStr = colorsArr.slice(-2).join(' and ');
+            if (!colorsStr) colorsStr = 'Red and Yellow';
+
+            let symbolsStr = stampsArr.slice(-2).join(' and ');
+            if (!symbolsStr) symbolsStr = 'The Sun';
+
+            const wishHtml = `"Our Pysanka is painted in <span class="text-amber-300 font-bold">${colorsStr}</span>. It features <span class="text-amber-400 font-bold">${symbolsStr}</span>. We wish peace, health, and joy to everyone!"`;
+
+            document.getElementById('englishWishText').innerHTML = wishHtml;
+        }
+
+        /* Text-to-Speech English Voice-over */
+        function speakWish() {
+            if (!('speechSynthesis' in window)) {
+                showToast('Ваш браузер не підтримує озвучку');
+                return;
+            }
+
+            window.speechSynthesis.cancel();
+
+            const colorsArr = Array.from(usedColors).slice(-2).join(' and ') || 'Red and Yellow';
+            const symbolsArr = Array.from(usedStamps).slice(-2).join(' and ') || 'The Sun';
+            const textToSpeak = `Our Pysanka is painted in ${colorsArr}. It features ${symbolsArr}. We wish peace, health, and joy to everyone!`;
+
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.9;
+            
+            window.speechSynthesis.speak(utterance);
+            showToast('Прослуховування англійського побажання...');
+        }
+
+        function downloadPysankaCard() {
+            playSound('click');
+
+            const cardCanvas = document.createElement('canvas');
+            cardCanvas.width = 600;
+            cardCanvas.height = 700;
+            const cCtx = cardCanvas.getContext('2d');
+
+            cCtx.fillStyle = '#0f172a';
+            cCtx.fillRect(0, 0, 600, 700);
+
+            cCtx.strokeStyle = '#f59e0b';
+            cCtx.lineWidth = 8;
+            cCtx.strokeRect(16, 16, 568, 668);
+
+            cCtx.fillStyle = '#f59e0b';
+            cCtx.font = 'bold 28px "Playfair Display", serif';
+            cCtx.textAlign = 'center';
+            cCtx.fillText('Magic Pysanka of Peace & Joy', 300, 65);
+
+            cCtx.fillStyle = '#94a3b8';
+            cCtx.font = '14px "Montserrat", sans-serif';
+            cCtx.fillText('Integrated English & Art Activity', 300, 90);
+
+            cCtx.drawImage(canvas, 110, 110, 380, 480);
+
+            cCtx.fillStyle = '#f8fafc';
+            cCtx.font = 'italic 15px "Montserrat", sans-serif';
+            
+            const rawWishText = document.getElementById('englishWishText').innerText;
+            cCtx.fillText(rawWishText, 300, 630);
+
+            const dataUrl = cardCanvas.toDataURL('image/png');
+            const previewContainer = document.getElementById('cardPreviewContainer');
+            previewContainer.innerHTML = `<img src="${dataUrl}" class="w-full h-auto rounded-lg shadow">`;
+
+            document.getElementById('downloadCardBtn').href = dataUrl;
+            document.getElementById('exportModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('exportModal').classList.add('hidden');
+        }
+
+        function resetCanvasConfirm() {
+            playSound('click');
+            if (window.userDrawLayer) {
+                const drawCtx = window.userDrawLayer.getContext('2d');
+                drawCtx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+            usedColors = new Set(['Red']);
+            usedStamps = new Set(['Sun']);
+            setupGridRegions(currentGrid);
+            updateWishText();
+            renderCanvas();
+            showToast('Писанку очищено');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
